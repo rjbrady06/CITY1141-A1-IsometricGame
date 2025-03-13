@@ -3,57 +3,89 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private Rigidbody _rb;
-    [SerializeField] private float _speed = 3;
-    [SerializeField] private float _turnSpeed = 360;
-    [SerializeField] private Animator _animator;
+    const string IDLE = "Idle";
+    const string WALK = "Walk";
 
-    private Vector3 _input;
+    CustomActions input;
 
-    void Start()
-    {
-        _animator = GetComponent<Animator>();   
-    } 
-    void Update()
-    {
-        GatherInput();
-        Look();
-    } 
+    NavMeshAgent agent;
+    Animator animator;
 
-    void FixedUpdate()
+    [Header("Movement")]
+    [SerializeField] ParticleSystem clickEffect;
+    [SerializeField] LayerMask clickableLayers;
+
+    float lookRotationSpeed = 8f;
+
+    void Awake()
     {
-        Move();
+        agent = GetComponent<NavMeshAgent>();   
+        animator = GetComponent<Animator>();
+
+        input = new CustomActions();
+        AssignInputs();
     }
 
-    void GatherInput()
-   {
-        _input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-   }
-
-    void Look()
+    void AssignInputs()
     {
-        if (_input != Vector3.zero)
-        {
-            _animator.SetBool("isMoving?" , true);
-            Quaternion toRotation = Quaternion.LookRotation(_input, Vector3.up);
-            
+        input.Main.Move.performed += ctx => ClickToMove();
+    }
 
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation , _turnSpeed * Time.deltaTime);
+    void ClickToMove()
+    {
+        Debug.Log("raycast");
+        RaycastHit hit;
+        if(Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 100))
+        {
+            Debug.Log("I am walkinmg");
+            agent.destination = hit.point;
+            if(clickEffect != null)
+            {
+                Instantiate(clickEffect, hit.point += new Vector3(0, 0.1f, 0), clickEffect.transform.rotation);
+            }
+        }
+    }
+
+    void OnEnable()
+    {
+        input.Enable();
+    }
+
+    void OnDisable()
+    {
+        input.Disable();
+    }
+
+    void Update()
+    {
+        FaceTarget();
+        SetAnimations();
+    }
+
+    void FaceTarget()
+    {
+        if (agent.destination != transform.position)
+        {
+            Vector3 direction = (agent.destination - transform.position).normalized;
+            Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * lookRotationSpeed);
+        }
+    }
+
+    void SetAnimations()
+    {
+        if(agent.velocity == Vector3.zero)
+        {
+            animator.Play(IDLE);
         }
         else
         {
-            _animator.SetBool("isMoving?" , false);
+            animator.Play(WALK);
         }
     }
-
-    void Move()
-    {
-        _rb.MovePosition(transform.position + (transform.forward * _input.magnitude)* _speed * Time.deltaTime);
-    }
-
-    
-   
 }
