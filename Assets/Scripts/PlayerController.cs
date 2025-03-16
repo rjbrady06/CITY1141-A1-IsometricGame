@@ -94,7 +94,7 @@ public class PlayerController : MonoBehaviour
     {
         if (target != null) return;
 
-        if(Vector3.Distance(target.transform.position, transform.position) <= attackDistance)
+        if (Vector3.Distance(target.transform.position, transform.position) <= attackDistance)
         {
             ReachDistance();
         }
