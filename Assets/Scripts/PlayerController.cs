@@ -92,7 +92,7 @@ public class PlayerController : MonoBehaviour
 
     void FollowTarget()
     {
-        if (target != null) return;
+        if (target == null) return;
 
         if (Vector3.Distance(target.transform.position, transform.position) <= attackDistance)
         {
