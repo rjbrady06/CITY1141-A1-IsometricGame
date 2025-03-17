@@ -1,10 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.InputSystem;
+using UnityEngine.AI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,6 +10,8 @@ public class PlayerController : MonoBehaviour
     const string WALK = "Walk";
     const string ATTACK = "Attack";
     const string PICKUP = "Pickup";
+
+    string currentAnimation;
 
     CustomActions input;
 
@@ -21,9 +21,9 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     [SerializeField] ParticleSystem clickEffect;
     [SerializeField] LayerMask clickableLayers;
-   
+
     float lookRotationSpeed = 8f;
-    
+
     [Header("Attack")]
     [SerializeField] float attackSpeed = 1.5f;
     [SerializeField] float attackDelay = 0.3f;
@@ -33,9 +33,10 @@ public class PlayerController : MonoBehaviour
 
     bool playerBusy = false;
     Interactable target;
+
     void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();   
+        agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
 
         input = new CustomActions();
@@ -50,14 +51,14 @@ public class PlayerController : MonoBehaviour
     void ClickToMove()
     {
         RaycastHit hit;
-        if(Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 100, clickableLayers))
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, 100, clickableLayers))
         {
-            if(hit.transform.CompareTag("Interactable"))
+            if (hit.transform.CompareTag("Interactable"))
             {
                 target = hit.transform.GetComponent<Interactable>();
-                if(clickEffect != null)
-                {
-                    Instantiate(clickEffect, hit.point += new Vector3(0, 0.1f, 0), clickEffect.transform.rotation);
+                if (clickEffect != null)
+                { 
+                    Instantiate(clickEffect, hit.transform.position + new Vector3(0, 0.1f, 0), clickEffect.transform.rotation); 
                 }
             }
             else
@@ -65,22 +66,22 @@ public class PlayerController : MonoBehaviour
                 target = null;
 
                 agent.destination = hit.point;
-                if(clickEffect != null)
-                {
-                    Instantiate(clickEffect, hit.point += new Vector3(0, 0.1f, 0), clickEffect.transform.rotation);
+                if (clickEffect != null)
+                { 
+                    Instantiate(clickEffect, hit.point + new Vector3(0, 0.1f, 0), clickEffect.transform.rotation); 
                 }
             }
         }
     }
 
     void OnEnable()
-    {
-        input.Enable();
+    { 
+        input.Enable(); 
     }
 
     void OnDisable()
-    {
-        input.Disable();
+    { 
+        input.Disable(); 
     }
 
     void Update()
@@ -95,13 +96,32 @@ public class PlayerController : MonoBehaviour
         if (target == null) return;
 
         if (Vector3.Distance(target.transform.position, transform.position) <= attackDistance)
-        {
-            ReachDistance();
+        { 
+            ReachDistance(); 
         }
         else
-        {
-            agent.SetDestination(target.transform.position);
+        { 
+            agent.SetDestination(target.transform.position); 
         }
+    }
+
+    void FaceTarget()
+    {
+        if (agent.destination == transform.position) return;
+
+        Vector3 facing = Vector3.zero;
+        if (target != null)
+        { 
+            facing = target.transform.position; 
+        }
+        else
+        { 
+            facing = agent.destination; 
+        }
+
+        Vector3 direction = (facing - transform.position).normalized;
+        Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * lookRotationSpeed);
     }
 
     void ReachDistance()
@@ -115,13 +135,13 @@ public class PlayerController : MonoBehaviour
         switch (target.interactionType)
         {
             case InteractableType.Enemy:
+
                 animator.Play(ATTACK);
 
                 Invoke(nameof(SendAttack), attackDelay);
                 Invoke(nameof(ResetBusyState), attackSpeed);
                 break;
             case InteractableType.Item:
-                animator.Play(PICKUP);
 
                 target.InteractWithItem();
                 target = null;
@@ -135,12 +155,12 @@ public class PlayerController : MonoBehaviour
     {
         if (target == null) return;
 
-        if(target.myActor.currentHealth <= 0)
-        {
-            target = null; return;
+        if (target.myActor.currentHealth <= 0)
+        { 
+            target = null; return; 
         }
 
-        Instantiate(hitEffect, target.transform.position + new Vector3(0 , 1, 0), Quaternion.identity);
+        Instantiate(hitEffect, target.transform.position + new Vector3(0, 1, 0), Quaternion.identity);
         target.GetComponent<Actor>().TakeDamage(attackDamage);
     }
 
@@ -149,40 +169,18 @@ public class PlayerController : MonoBehaviour
         playerBusy = false;
         SetAnimations();
     }
-    void FaceTarget()
-    {
-        if (agent.destination == transform.position) return;
-
-        Vector3 facing = Vector3.zero;
-        if(target != null)
-        {
-            facing = target.transform.position;
-        }
-        else
-        {
-            facing = agent.destination;
-        }
-
-
-        if (agent.destination != transform.position)
-        {
-            Vector3 direction = (facing - transform.position).normalized;
-            Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * lookRotationSpeed);
-        }
-    }
 
     void SetAnimations()
     {
         if (playerBusy) return;
 
-        if(agent.velocity == Vector3.zero)
-        {
-            animator.Play(IDLE);
+        if (agent.velocity == Vector3.zero)
+        { 
+            animator.Play(IDLE); 
         }
         else
-        {
-            animator.Play(WALK);
+        { 
+            animator.Play(WALK); 
         }
     }
 }
