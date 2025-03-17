@@ -23,7 +23,6 @@ public class Actor : MonoBehaviour
             { 
                 Death(); 
             }
-
         }
     }
 
