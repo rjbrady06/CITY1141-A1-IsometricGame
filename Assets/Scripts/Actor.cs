@@ -20,7 +20,9 @@ public class Actor : MonoBehaviour
         currentHealth -= amount;
         if (currentHealth <= 0)
         {
-            { Death(); }
+            { 
+                Death(); 
+            }
 
         }
     }

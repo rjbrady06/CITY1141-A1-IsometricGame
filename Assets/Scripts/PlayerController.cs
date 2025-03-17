@@ -155,13 +155,15 @@ public class PlayerController : MonoBehaviour
     {
         if (target == null) return;
 
-        if (target.myActor.currentHealth <= 0)
-        { 
-            target = null; return; 
+        if (target.MyActor.currentHealth <= 0)
+        {
+            target = null; return;
         }
-
-        Instantiate(hitEffect, target.transform.position + new Vector3(0, 1, 0), Quaternion.identity);
-        target.GetComponent<Actor>().TakeDamage(attackDamage);
+        else
+        {
+            Instantiate(hitEffect, target.transform.position + new Vector3(0, 1, 0), Quaternion.identity);
+            target.GetComponent<Actor>().TakeDamage(attackDamage);
+        }
     }
 
     void ResetBusyState()
