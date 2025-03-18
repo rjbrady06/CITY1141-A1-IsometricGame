@@ -12,6 +12,8 @@ public class Actor : MonoBehaviour
     NavMeshAgent agent;
     CharacterCombat combat;
 
+    
+
     void Start()
     {
         target = PlayerManager.instance.player.transform;

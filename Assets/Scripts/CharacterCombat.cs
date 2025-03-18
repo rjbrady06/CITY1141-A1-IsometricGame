@@ -4,15 +4,15 @@ using UnityEngine;
 
 public class CharacterCombat : MonoBehaviour
 {
-    // Start is called before the first frame update
+    CharacterStats myStats;
+
     void Start()
     {
-        
+        myStats = GetComponent<CharacterStats>():
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Attack (CharacterStats targetStats)
     {
-        
+        targetStats.TakeDamage(20);
     }
 }
