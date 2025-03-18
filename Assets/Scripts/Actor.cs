@@ -10,7 +10,7 @@ public class Actor : MonoBehaviour
     public int currentHealth { get; private set; }
     Transform target;
     NavMeshAgent agent;
-    CharacterCombat combat;
+    
 
     
 
