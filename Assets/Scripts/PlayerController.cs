@@ -87,7 +87,7 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         FollowTarget();
-        FaceTarget();
+        FaceInteractable();
         SetAnimations();
     }
 
@@ -105,7 +105,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void FaceTarget()
+    void FaceInteractable()
     {
         if (agent.destination == transform.position) return;
 
