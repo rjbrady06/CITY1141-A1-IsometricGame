@@ -1,103 +1,126 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.Rendering.LookDev;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class Enemy : MonoBehaviour
 {
-    [SerializeField] float health = 3;
-    [SerializeField] GameObject ragdoll;
+    public NavMeshAgent agent;
 
-    [Header("Combat")]
-    [SerializeField] float attackCD = 3f;
-    [SerializeField] float attackRange = 1f;
-    [SerializeField] float aggroRange = 4f;
+    public Transform player;
 
-    GameObject player;
-    NavMeshAgent agent;
+    public LayerMask whatIsGround, whatIsPlayer;
+
+    public float health;
+
     Animator animator;
-    float timePassed;
-    float newDestinationCD = 0.5f;
 
-    void Start()
+    //Patroling
+    public Vector3 walkPoint;
+    bool walkPointSet;
+    public float walkPointRange;
+
+    //Attacking
+    public float timeBetweenAttacks;
+    bool alreadyAttacked;
+    public GameObject sword;
+
+    //States
+    public float sightRange, attackRange;
+    public bool playerInSightRange, playerInAttackRange;
+
+    private void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        player = GameObject.FindGameObjectWithTag("Player");
+    }
+    private void Awake()
+    {
+        player = GameObject.Find("King").transform;
+        agent = GetComponent<NavMeshAgent>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        animator.SetFloat("speed", agent.velocity.magnitude / agent.speed);
+        //Check for sight and attack range
+        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
+        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
 
-        if (player == null)
+        if (!playerInSightRange && !playerInAttackRange) Patroling();
+        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+        if (playerInAttackRange && playerInSightRange) AttackPlayer();
+    }
+
+    private void Patroling()
+    {
+        if (!walkPointSet) SearchWalkPoint();
+
+        if (walkPointSet)
+            agent.SetDestination(walkPoint);
+
+        Vector3 distanceToWalkPoint = transform.position - walkPoint;
+
+        //Walkpoint reached
+        if (distanceToWalkPoint.magnitude < 1f)
+            walkPointSet = false;
+    }
+    private void SearchWalkPoint()
+    {
+        //Calculate random point in range
+        float randomZ = Random.Range(-walkPointRange, walkPointRange);
+        float randomX = Random.Range(-walkPointRange, walkPointRange);
+
+        walkPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
+
+        if (Physics.Raycast(walkPoint, -transform.up, 2f, whatIsGround))
+            walkPointSet = true;
+    }
+
+    private void ChasePlayer()
+    {
+        agent.SetDestination(player.position);
+    }
+
+    private void AttackPlayer()
+    {
+        //Make sure enemy doesn't move
+        agent.SetDestination(transform.position);
+
+        transform.LookAt(player);
+
+        if (!alreadyAttacked)
         {
-            return;
-        }
+            ///Attack code here
+            Rigidbody rb = Instantiate(sword, transform.position, Quaternion.identity).GetComponent<Rigidbody>();
+            rb.AddForce(transform.forward * 32f, ForceMode.Impulse);
+            rb.AddForce(transform.up * 8f, ForceMode.Impulse);
+            ///End of attack code
 
-        if (timePassed >= attackCD)
-        {
-            if (Vector3.Distance(player.transform.position, transform.position) <= attackRange)
-            {
-                animator.SetTrigger("attack");
-                timePassed = 0;
-            }
-        }
-        timePassed += Time.deltaTime;
-
-        if (newDestinationCD <= 0 && Vector3.Distance(player.transform.position, transform.position) <= aggroRange)
-        {
-            newDestinationCD = 0.5f;
-            agent.SetDestination(player.transform.position);
-        }
-        newDestinationCD -= Time.deltaTime;
-        transform.LookAt(player.transform);
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            print(true);
-            player = collision.gameObject;
+            alreadyAttacked = true;
+          
+            Invoke(nameof(ResetAttack), timeBetweenAttacks);  
+            animator.SetTrigger("Attack");
         }
     }
-
-    void Die()
+    private void ResetAttack()
     {
-        Instantiate(ragdoll, transform.position, transform.rotation);
-        Destroy(this.gameObject);
+        alreadyAttacked = false;
     }
 
-    public void TakeDamage(float damageAmount)
+    public void TakeDamage(int damage)
     {
-        health -= damageAmount;
-        animator.SetTrigger("damage");
-       
+        health -= damage;
 
-        if (health <= 0)
-        {
-            Die();
-        }
+        if (health <= 0) Invoke(nameof(DestroyEnemy), 0.5f);
+        animator.SetTrigger("Damage");
     }
-    public void StartDealDamage()
+    private void DestroyEnemy()
     {
-        GetComponentInChildren<EnemyDamageDealer>().StartDealDamage();
-    }
-    public void EndDealDamage()
-    {
-        GetComponentInChildren<EnemyDamageDealer>().EndDealDamage();
+        Destroy(gameObject);
     }
 
-   
-
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, aggroRange);
+        Gizmos.DrawWireSphere(transform.position, sightRange);
     }
 }

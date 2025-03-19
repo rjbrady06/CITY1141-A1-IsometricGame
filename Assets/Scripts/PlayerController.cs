@@ -155,14 +155,14 @@ public class PlayerController : MonoBehaviour
     {
         if (target == null) return;
 
-        if (target.MyActor.currentHealth <= 0)
+        if (target.MyActor.health <= 0)
         {
             target = null; return;
         }
         else
         {
             Instantiate(hitEffect, target.transform.position + new Vector3(0, 1, 0), Quaternion.identity);
-            target.GetComponent<Actor>().TakeDamage(attackDamage);
+            target.GetComponent<Enemy>().TakeDamage(attackDamage);
         }
     }
 

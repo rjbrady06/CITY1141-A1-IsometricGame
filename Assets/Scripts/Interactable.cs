@@ -6,7 +6,7 @@ public enum InteractableType { Enemy, Item }
 
 public class Interactable : MonoBehaviour
 {
-    public Actor MyActor { get; private set; }
+    public Enemy MyActor { get; private set; }
 
     public InteractableType interactionType;
 
@@ -14,7 +14,7 @@ public class Interactable : MonoBehaviour
     {
         if (interactionType == InteractableType.Enemy)
         { 
-            MyActor = GetComponent<Actor>(); 
+            MyActor = GetComponent<Enemy>(); 
         }
     }
 
