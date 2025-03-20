@@ -60,6 +60,7 @@ public class Enemy : MonoBehaviour
         //Walkpoint reached
         if (distanceToWalkPoint.magnitude < 1f)
             walkPointSet = false;
+        
     }
     private void SearchWalkPoint()
     {
@@ -76,6 +77,7 @@ public class Enemy : MonoBehaviour
     private void ChasePlayer()
     {
         agent.SetDestination(player.position);
+        animator.SetTrigger("Speed");
     }
 
     private void AttackPlayer()
